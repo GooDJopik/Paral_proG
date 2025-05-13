@@ -9,7 +9,6 @@
 
 using namespace std;
 
-// CUDA ядро для умножения матриц
 __global__ void matrixMultiplyKernel(int* A, int* B, int* C, int size) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -59,7 +58,6 @@ void write_matrix_to_file(const string& filename, const vector<vector<int>>& mat
 vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const vector<vector<int>>& B) {
     int size = A.size();
 
-    // Преобразование матриц в плоские массивы
     int* flatA = new int[size * size];
     int* flatB = new int[size * size];
     int* flatC = new int[size * size];
@@ -71,7 +69,6 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         }
     }
 
-    // Выделение памяти на GPU
     int* d_A, * d_B, * d_C;
     cudaError_t err;
     err = cudaMalloc(&d_A, size * size * sizeof(int));
@@ -104,7 +101,6 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         return vector<vector<int>>();
     }
 
-    // Копирование данных на GPU
     err = cudaMemcpy(d_A, flatA, size * size * sizeof(int), cudaMemcpyHostToDevice);
     if (err != cudaSuccess) {
         cerr << "Ошибка копирования d_A: " << cudaGetErrorString(err) << endl;
@@ -129,16 +125,13 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         return vector<vector<int>>();
     }
 
-    // Настройка параметров запуска ядра
     dim3 threadsPerBlock(16, 16);
     dim3 blocksPerGrid((size + threadsPerBlock.x - 1) / threadsPerBlock.x,
         (size + threadsPerBlock.y - 1) / threadsPerBlock.y);
 
-    // Запуск ядра
     matrixMultiplyKernel <<<blocksPerGrid, threadsPerBlock >>> (d_A, d_B, d_C, size);
     cudaDeviceSynchronize();
 
-    // Проверка ошибок ядра
     err = cudaGetLastError();
     if (err != cudaSuccess) {
         cerr << "Ошибка выполнения ядра: " << cudaGetErrorString(err) << endl;
@@ -151,7 +144,6 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         return vector<vector<int>>();
     }
 
-    // Копирование результата обратно на CPU
     err = cudaMemcpy(flatC, d_C, size * size * sizeof(int), cudaMemcpyDeviceToHost);
     if (err != cudaSuccess) {
         cerr << "Ошибка копирования результата: " << cudaGetErrorString(err) << endl;
@@ -164,7 +156,6 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         return vector<vector<int>>();
     }
 
-    // Преобразование результата обратно в вектор векторов
     vector<vector<int>> C(size, vector<int>(size));
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
@@ -172,7 +163,6 @@ vector<vector<int>> multiply_matrices_cuda(const vector<vector<int>>& A, const v
         }
     }
 
-    // Освобождение памяти
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
@@ -189,7 +179,6 @@ int main() {
 
     vector<int> sizes = { 100, 200, 300, 400, 500, 1000, 1500, 2000 };
 
-    // Создаем директории, если их нет
     system("mkdir -p matrices");
     system("mkdir -p results");
 
